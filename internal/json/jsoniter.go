@@ -4,6 +4,8 @@
 
 // +build jsoniter
 
+// 这里利用了go build 的tags特性，只有在传入go build -tags=jsoniter .的时候，才会编译这个文件
+// jsoniter比标准库的实现快很多
 package json
 
 import "github.com/json-iterator/go"

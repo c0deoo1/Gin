@@ -20,6 +20,7 @@ func (msgpackBinding) Name() string {
 	return "msgpack"
 }
 
+// 将req.Body按照msgpack格式来反序列化
 func (msgpackBinding) Bind(req *http.Request, obj interface{}) error {
 	return decodeMsgPack(req.Body, obj)
 }

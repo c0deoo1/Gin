@@ -6,6 +6,7 @@
 
 package json
 
+// 这里利用了go build 的tags特性，默认使用标准库的Json来实现
 import "encoding/json"
 
 var (

@@ -46,6 +46,7 @@ type methodTree struct {
 
 type methodTrees []methodTree
 
+// 由于method数量比较小，直接通过数组来遍历也不会有性能问题
 func (trees methodTrees) get(method string) *node {
 	for _, tree := range trees {
 		if tree.method == method {

@@ -26,9 +26,11 @@ var (
 )
 
 // HandlerFunc defines the handler used by gin middleware as return value.
+// 中间件或者用户处理函数的签名
 type HandlerFunc func(*Context)
 
 // HandlersChain defines a HandlerFunc array.
+// 责任链模式
 type HandlersChain []HandlerFunc
 
 // Last returns the last handler in the chain. ie. the last handler is the main one.
@@ -52,6 +54,7 @@ type RoutesInfo []RouteInfo
 
 // Engine is the framework's instance, it contains the muxer, middleware and configuration settings.
 // Create an instance of Engine, by using New() or Default()
+// Engine就是一个RouterGroup
 type Engine struct {
 	RouterGroup
 
@@ -114,6 +117,7 @@ type Engine struct {
 	trees            methodTrees
 }
 
+// 小技巧：赋值操作让编译器保证Engine实现了IRouter接口
 var _ IRouter = &Engine{}
 
 // New returns a new blank Engine instance without any middleware attached.
@@ -129,8 +133,10 @@ func New() *Engine {
 	engine := &Engine{
 		RouterGroup: RouterGroup{
 			Handlers: nil,
+			//根RouterGroup的basePath为/
 			basePath: "/",
-			root:     true,
+			//标识为根RouterGroup
+			root: true,
 		},
 		FuncMap:                template.FuncMap{},
 		RedirectTrailingSlash:  true,
@@ -147,6 +153,7 @@ func New() *Engine {
 		secureJsonPrefix:       "while(1);",
 	}
 	engine.RouterGroup.engine = engine
+	// 每一个请求的处理过程中都需要一个gin.Context对象，使用 sync.Pool避免频繁的创建、销毁对象，提升性能
 	engine.pool.New = func() interface{} {
 		return engine.allocateContext()
 	}
@@ -154,6 +161,7 @@ func New() *Engine {
 }
 
 // Default returns an Engine instance with the Logger and Recovery middleware already attached.
+// Default内部也是调用New方法，默认启动了两个全局的中间件：Logger和Recovery
 func Default() *Engine {
 	debugPrintWARNINGDefault()
 	engine := New()
@@ -242,13 +250,17 @@ func (engine *Engine) Use(middleware ...HandlerFunc) IRoutes {
 }
 
 func (engine *Engine) rebuild404Handlers() {
+	// noRoute的处理链中也包含了engine的全局中间件
 	engine.allNoRoute = engine.combineHandlers(engine.noRoute)
 }
 
 func (engine *Engine) rebuild405Handlers() {
+	// noMethod的处理链中也包含了engine的全局中间件
 	engine.allNoMethod = engine.combineHandlers(engine.noMethod)
 }
 
+// 这里没有任何的加锁逻辑，属于非线程安全的接口
+// 由此可见Gin的使用方在配置Route的时候，需要自己来保证串行化
 func (engine *Engine) addRoute(method, path string, handlers HandlersChain) {
 	assert1(path[0] == '/', "path must begin with '/'")
 	assert1(method != "", "HTTP method can not be empty")
@@ -316,6 +328,7 @@ func (engine *Engine) RunTLS(addr, certFile, keyFile string) (err error) {
 // RunUnix attaches the router to a http.Server and starts listening and serving HTTP requests
 // through the specified unix socket (ie. a file).
 // Note: this method will block the calling goroutine indefinitely unless an error happens.
+// UNIX套接字上启动HTTP服务器
 func (engine *Engine) RunUnix(file string) (err error) {
 	debugPrint("Listening and serving HTTP on unix:/%s", file)
 	defer func() { debugPrintError(err) }()
@@ -334,6 +347,7 @@ func (engine *Engine) RunUnix(file string) (err error) {
 // RunFd attaches the router to a http.Server and starts listening and serving HTTP requests
 // through the specified file descriptor.
 // Note: this method will block the calling goroutine indefinitely unless an error happens.
+// FD上启动HTTP服务器
 func (engine *Engine) RunFd(fd int) (err error) {
 	debugPrint("Listening and serving HTTP on fd@%d", fd)
 	defer func() { debugPrintError(err) }()
@@ -350,6 +364,7 @@ func (engine *Engine) RunFd(fd int) (err error) {
 
 // RunListener attaches the router to a http.Server and starts listening and serving HTTP requests
 // through the specified net.Listener
+// 已有的Listener上启动HTTP服务器
 func (engine *Engine) RunListener(listener net.Listener) (err error) {
 	debugPrint("Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
 	defer func() { debugPrintError(err) }()
@@ -358,14 +373,19 @@ func (engine *Engine) RunListener(listener net.Listener) (err error) {
 }
 
 // ServeHTTP conforms to the http.Handler interface.
+// http.Serve(listener, engine)
+// 标准库的http包需要engine实现ServeHTTP方法，收到请求之后，由这个函数来做处理，这个函数内部来做URL请求的分发
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// 从内存池中分配一个Context，并对Context做一个初始化，避免存在脏数据
 	c := engine.pool.Get().(*Context)
 	c.writermem.reset(w)
 	c.Request = req
+	// 这里会把index设置为-1
 	c.reset()
 
 	engine.handleHTTPRequest(c)
 
+	// 用完的Context放入内存池中
 	engine.pool.Put(c)
 }
 
@@ -406,6 +426,7 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 			c.handlers = value.handlers
 			c.Params = value.params
 			c.fullPath = value.fullPath
+			//开始遍历责任链
 			c.Next()
 			c.writermem.WriteHeaderNow()
 			return
@@ -424,6 +445,7 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 
 	if engine.HandleMethodNotAllowed {
 		for _, tree := range engine.trees {
+			// 尝试匹配其他的Method
 			if tree.method == httpMethod {
 				continue
 			}
@@ -434,6 +456,7 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 			}
 		}
 	}
+	// 匹配NotFound Handler
 	c.handlers = engine.allNoRoute
 	serveError(c, http.StatusNotFound, default404Body)
 }

@@ -28,6 +28,8 @@ func mapForm(ptr interface{}, form map[string][]string) error {
 
 var emptyField = reflect.StructField{}
 
+// 反射比较难懂，主要是利用反射来将一个map塞入到对应的结构体字段当中去
+// 运用了大量的递归和反射的语法
 func mapFormByTag(ptr interface{}, form map[string][]string, tag string) error {
 	return mappingByPtr(ptr, formSource(form), tag)
 }

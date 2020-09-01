@@ -17,12 +17,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// 参考一下HTTP请求的单元测试的写法
+// 尽量做到每一个文件都有对应的单元测试的文件
 func TestPanicClean(t *testing.T) {
+	//Buffer也实现了io.Writer接口，可以用来查询LOG输出中是否包含某个关键字
 	buffer := new(bytes.Buffer)
 	router := New()
 	password := "my-super-secret-password"
 	router.Use(RecoveryWithWriter(buffer))
 	router.GET("/recovery", func(c *Context) {
+		//AbortWithStatus会立即将Status写入到客户端，后续的写入都会被忽略掉
 		c.AbortWithStatus(http.StatusBadRequest)
 		panic("Oupps, Houston, we have a problem")
 	})
@@ -66,6 +70,7 @@ func TestPanicInHandler(t *testing.T) {
 	assert.NotContains(t, buffer.String(), "GET /recovery")
 
 	// Debug mode prints the request
+	// Debug模式才会打印出请求到日志
 	SetMode(DebugMode)
 	// RUN
 	w = performRequest(router, "GET", "/recovery")
@@ -115,6 +120,7 @@ func TestFunction(t *testing.T) {
 func TestPanicWithBrokenPipe(t *testing.T) {
 	const expectCode = 204
 
+	// 测试用例的常见写法：通过MAP来构造用例样本
 	expectMsgs := map[syscall.Errno]string{
 		syscall.EPIPE:      "broken pipe",
 		syscall.ECONNRESET: "connection reset by peer",

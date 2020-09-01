@@ -36,6 +36,7 @@ func Bind(val interface{}) HandlerFunc {
 }
 
 // WrapF is a helper function for wrapping http.HandlerFunc and returns a Gin middleware.
+// 将标准库中的http.HandlerFunc和http.Handler转换为Gin的middleware
 func WrapF(f http.HandlerFunc) HandlerFunc {
 	return func(c *Context) {
 		f(c.Writer, c.Request)
@@ -137,6 +138,7 @@ func joinPaths(absolutePath, relativePath string) string {
 func resolveAddress(addr []string) string {
 	switch len(addr) {
 	case 0:
+		// 这里默认会引用POTRT环境变量
 		if port := os.Getenv("PORT"); port != "" {
 			debugPrint("Environment variable PORT=\"%s\"", port)
 			return ":" + port

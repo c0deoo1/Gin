@@ -14,6 +14,7 @@ type Render interface {
 	WriteContentType(w http.ResponseWriter)
 }
 
+// 编译器帮忙校验各个类实现了Render接口
 var (
 	_ Render     = JSON{}
 	_ Render     = IndentedJSON{}

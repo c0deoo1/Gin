@@ -40,6 +40,7 @@ var DefaultWriter io.Writer = os.Stdout
 // DefaultErrorWriter is the default io.Writer used by Gin to debug errors
 var DefaultErrorWriter io.Writer = os.Stderr
 
+// GIN工作的模式Debug/Release/Test
 var ginMode = debugCode
 var modeName = DebugMode
 
@@ -67,6 +68,7 @@ func SetMode(value string) {
 }
 
 // DisableBindValidation closes the default validator.
+// 关闭Validator验证
 func DisableBindValidation() {
 	binding.Validator = nil
 }

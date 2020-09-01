@@ -37,6 +37,7 @@ type FooStruct struct {
 	Foo string `msgpack:"foo" json:"foo" form:"foo" xml:"foo" binding:"required"`
 }
 
+// 结构体内嵌
 type FooBarStruct struct {
 	FooStruct
 	Bar string `msgpack:"bar" json:"bar" form:"bar" xml:"bar" binding:"required"`
@@ -143,6 +144,7 @@ type FooStructForMapPtrType struct {
 	PtrBar *map[string]interface{} `form:"ptr_bar"`
 }
 
+// 测试通过Method和Content-Type来选择Bing规则是否符合预期
 func TestBindingDefault(t *testing.T) {
 	assert.Equal(t, Form, Default("GET", ""))
 	assert.Equal(t, Form, Default("GET", MIMEJSON))
@@ -166,6 +168,7 @@ func TestBindingDefault(t *testing.T) {
 	assert.Equal(t, YAML, Default("PUT", MIMEYAML))
 }
 
+// required的字段不能为zero-value
 func TestBindingJSONNilBody(t *testing.T) {
 	var obj FooStruct
 	req, _ := http.NewRequest(http.MethodPost, "/", nil)
@@ -187,6 +190,7 @@ func TestBindingJSONUseNumber(t *testing.T) {
 		`{"foo": 123}`, `{"bar": "foo"}`)
 }
 
+// 如果不使用EnableDecoderUseNumber的话，会将数字反序列化为float64
 func TestBindingJSONUseNumber2(t *testing.T) {
 	testBodyBindingUseNumber2(t,
 		JSON, "json",
@@ -194,12 +198,16 @@ func TestBindingJSONUseNumber2(t *testing.T) {
 		`{"foo": 123}`, `{"bar": "foo"}`)
 }
 
+// 对于Json中一些不存在的字段是否需要报错
+// EnableDecoderDisallowUnknownFields 这个值默认是false的
+// 这个也是推荐的做法，后续请求结构体升级会更方便
 func TestBindingJSONDisallowUnknownFields(t *testing.T) {
 	testBodyBindingDisallowUnknownFields(t, JSON,
 		"/", "/",
 		`{"foo": "bar"}`, `{"foo": "bar", "what": "this"}`)
 }
 
+// POST Form请求，使用的是body来反序列化
 func TestBindingForm(t *testing.T) {
 	testFormBinding(t, "POST",
 		"/", "/",
@@ -1153,6 +1161,8 @@ func testBodyBindingUseNumber2(t *testing.T, b Binding, name, path, badPath, bod
 
 func testBodyBindingDisallowUnknownFields(t *testing.T, b Binding, path, badPath, body, badBody string) {
 	EnableDecoderDisallowUnknownFields = true
+	// 这里的处理思路比较好，退出的时候恢复一下原来的值
+	// 最好是现备份一下原始值 orig = value ，退出的时候还原 value = orig
 	defer func() {
 		EnableDecoderDisallowUnknownFields = false
 	}()

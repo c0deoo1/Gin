@@ -29,6 +29,8 @@ type structFull struct {
 	Nationality *string `form:"nationality"`
 }
 
+// TODO 研究一下golang对于性能测试的实现方式
+// TODO 研究一下Goland IDE的Profile分析工具
 func BenchmarkMapFormFull(b *testing.B) {
 	var s structFull
 	for i := 0; i < b.N; i++ {

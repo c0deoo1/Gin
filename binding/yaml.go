@@ -18,6 +18,7 @@ func (yamlBinding) Name() string {
 	return "yaml"
 }
 
+// 将req.Body按照yaml格式来反序列化
 func (yamlBinding) Bind(req *http.Request, obj interface{}) error {
 	return decodeYAML(req.Body, obj)
 }

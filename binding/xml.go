@@ -17,6 +17,7 @@ func (xmlBinding) Name() string {
 	return "xml"
 }
 
+// 将req.Body按照xml格式来反序列化
 func (xmlBinding) Bind(req *http.Request, obj interface{}) error {
 	return decodeXML(req.Body, obj)
 }

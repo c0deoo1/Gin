@@ -65,6 +65,7 @@ func BasicAuthForRealm(accounts Accounts, realm string) HandlerFunc {
 
 // BasicAuth returns a Basic HTTP Authorization middleware. It takes as argument a map[string]string where
 // the key is the user name and the value is the password.
+// Basic认证中间件，具体认证细节可以参考：https://segmentfault.com/a/1190000006672893
 func BasicAuth(accounts Accounts) HandlerFunc {
 	return BasicAuthForRealm(accounts, "")
 }

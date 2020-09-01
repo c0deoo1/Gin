@@ -30,6 +30,7 @@ func (jsonBinding) Name() string {
 	return "json"
 }
 
+// 将req.Body按照json格式来反序列化
 func (jsonBinding) Bind(req *http.Request, obj interface{}) error {
 	if req == nil || req.Body == nil {
 		return fmt.Errorf("invalid request")

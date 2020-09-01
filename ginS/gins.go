@@ -15,6 +15,7 @@ import (
 var once sync.Once
 var internalEngine *gin.Engine
 
+// 单例的实现
 func engine() *gin.Engine {
 	once.Do(func() {
 		internalEngine = gin.Default()

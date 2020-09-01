@@ -1,7 +1,7 @@
 // Copyright 2020 Gin Core Team. All rights reserved.
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
-
+// 再一次看到build tags的用法了
 // +build nomsgpack
 
 package binding

@@ -155,9 +155,11 @@ func (c *Context) FullPath() string {
 // Next should be used only inside middleware.
 // It executes the pending handlers in the chain inside the calling handler.
 // See example in GitHub.
+// Next函数也不是线程安全的
 func (c *Context) Next() {
 	c.index++
 	for c.index < int8(len(c.handlers)) {
+		// 注意这里的handler函数的内部也是可以调用Next的
 		c.handlers[c.index](c)
 		c.index++
 	}
@@ -575,12 +577,14 @@ func (c *Context) SaveUploadedFile(file *multipart.FileHeader, dst string) error
 // It parses the request's body as JSON if Content-Type == "application/json" using JSON or XML as a JSON input.
 // It decodes the json payload into the struct specified as a pointer.
 // It writes a 400 error and sets Content-Type header "text/plain" in the response if input is not valid.
+// 通过Method和ContentType来自动选择Bind规则
 func (c *Context) Bind(obj interface{}) error {
 	b := binding.Default(c.Request.Method, c.ContentType())
 	return c.MustBindWith(obj, b)
 }
 
 // BindJSON is a shortcut for c.MustBindWith(obj, binding.JSON).
+// 显示的选择使用Json来反序列化Request
 func (c *Context) BindJSON(obj interface{}) error {
 	return c.MustBindWith(obj, binding.JSON)
 }
@@ -704,6 +708,10 @@ func (c *Context) ShouldBindBodyWith(obj interface{}, bb binding.BindingBody) (e
 // ClientIP implements a best effort algorithm to return the real client IP, it parses
 // X-Real-IP and X-Forwarded-For in order to work properly with reverse-proxies such us: nginx or haproxy.
 // Use X-Forwarded-For before X-Real-Ip as nginx uses X-Real-Ip with the proxy's IP.
+// 尽可能的拿到真实的用户IP
+// Client -> Proxy --> ... --> Proxy --> Gin Server
+// 由于各种反向代理的存在，导致通过Conn来获取到的对端地址并不是实际的用户地址
+// 一般反向代理会有配置选项将用户的地址放到特定的Header中来传递，比如X-Forwarded-For或X-Real-Ip
 func (c *Context) ClientIP() string {
 	if c.engine.ForwardedByClientIP {
 		clientIP := c.requestHeader("X-Forwarded-For")
@@ -716,6 +724,7 @@ func (c *Context) ClientIP() string {
 		}
 	}
 
+	//Google的Appengine是通过X-Appengine-Remote-Addr这个字段来传递
 	if c.engine.AppEngine {
 		if addr := c.requestHeader("X-Appengine-Remote-Addr"); addr != "" {
 			return addr

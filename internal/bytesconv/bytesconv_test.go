@@ -69,7 +69,7 @@ func TestStringToBytes(t *testing.T) {
 }
 
 // go test -v -run=none -bench=^BenchmarkBytesConv -benchmem=true
-
+// benchmark测试内存的变化
 func BenchmarkBytesConvBytesToStrRaw(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		rawBytesToStr(testBytes)

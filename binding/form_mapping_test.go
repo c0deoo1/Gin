@@ -270,6 +270,8 @@ func TestMappingMapField(t *testing.T) {
 	assert.Equal(t, map[string]int{"one": 1}, s.M)
 }
 
+// "-"这个tagValue告诉反射机制，忽略这个字段
+// 如果没有这个特殊的tagValue，下面的例子会有循环引用，形成死循环
 func TestMappingIgnoredCircularRef(t *testing.T) {
 	type S struct {
 		S *S `form:"-"`

@@ -38,6 +38,7 @@ type IRoutes interface {
 
 // RouterGroup is used internally to configure router, a RouterGroup is associated with
 // a prefix and an array of handlers (middleware).
+// 每一个RouterGroup都有一个前缀和处理器链表
 type RouterGroup struct {
 	Handlers HandlersChain
 	basePath string
@@ -57,7 +58,9 @@ func (group *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
 // For example, all the routes that use a common middleware for authorization could be grouped.
 func (group *RouterGroup) Group(relativePath string, handlers ...HandlerFunc) *RouterGroup {
 	return &RouterGroup{
+		// 子RouterGroup的Handlers包含了父RouterGroup的所有handlers
 		Handlers: group.combineHandlers(handlers),
+		// 子RouterGroup的basePath为父RouterGroup的BashePath拼接上relativePath
 		basePath: group.calculateAbsolutePath(relativePath),
 		engine:   group.engine,
 	}
@@ -70,7 +73,9 @@ func (group *RouterGroup) BasePath() string {
 }
 
 func (group *RouterGroup) handle(httpMethod, relativePath string, handlers HandlersChain) IRoutes {
+	// 算出最终的URL路径
 	absolutePath := group.calculateAbsolutePath(relativePath)
+	// 合并所有的Handlers数组
 	handlers = group.combineHandlers(handlers)
 	group.engine.addRoute(httpMethod, absolutePath, handlers)
 	return group.returnObj()
@@ -209,6 +214,7 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 
 func (group *RouterGroup) combineHandlers(handlers HandlersChain) HandlersChain {
 	finalSize := len(group.Handlers) + len(handlers)
+	// 最多abortIndex个处理函数
 	if finalSize >= int(abortIndex) {
 		panic("too many handlers")
 	}

@@ -21,12 +21,15 @@ type header struct {
 	Value string
 }
 
+// HTTP请求的单元测试可以模仿一下
 func performRequest(r http.Handler, method, path string, headers ...header) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(method, path, nil)
 	for _, h := range headers {
 		req.Header.Add(h.Key, h.Value)
 	}
+	// ResponseRecorder实现了ResponseWriter接口，用于记录业务处理之后的响应
 	w := httptest.NewRecorder()
+	// 这里让r模拟去处理req请求
 	r.ServeHTTP(w, req)
 	return w
 }

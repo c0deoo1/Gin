@@ -21,6 +21,7 @@ func TestBasicAuth(t *testing.T) {
 	})
 
 	assert.Len(t, pairs, 3)
+	// Contains接口比较实用
 	assert.Contains(t, pairs, authPair{
 		user:  "bar",
 		value: "Basic YmFyOmZvbw==",
@@ -81,6 +82,7 @@ func TestBasicAuthAuthorizationHeader(t *testing.T) {
 	assert.Equal(t, "Basic YWRtaW46cGFzc3dvcmQ=", authorizationHeader("admin", "password"))
 }
 
+// 单元测试验证Auth
 func TestBasicAuthSucceed(t *testing.T) {
 	accounts := Accounts{"admin": "password"}
 	router := New()

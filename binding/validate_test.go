@@ -195,6 +195,7 @@ func TestValidatePrimitives(t *testing.T) {
 // structCustomValidation is a helper struct we use to check that
 // custom validation can be registered on it.
 // The `notone` binding directive is for custom validation and registered later.
+// 这里可以参考一下自定义的validate规则
 type structCustomValidation struct {
 	Integer int `binding:"notone"`
 }

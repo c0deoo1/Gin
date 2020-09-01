@@ -35,13 +35,16 @@ func Recovery() HandlerFunc {
 func RecoveryWithWriter(out io.Writer) HandlerFunc {
 	var logger *log.Logger
 	if out != nil {
+		// 这里Prefix是为了让终端打印出来的日志显示为红色
 		logger = log.New(out, "\n\n\x1b[31m", log.LstdFlags)
 	}
 	return func(c *Context) {
 		defer func() {
+			// Gin的请求处理都是在单独的协程中处理的，这里通过Revover来捕获异常
 			if err := recover(); err != nil {
 				// Check for a broken connection, as it is not really a
 				// condition that warrants a panic stack trace.
+				// 有一类错误是连接不可用导致的，由于连接都不可用了，无法向客户端回包了，这里检查一下这类错误
 				var brokenPipe bool
 				if ne, ok := err.(*net.OpError); ok {
 					if se, ok := ne.Err.(*os.SyscallError); ok {
@@ -52,10 +55,12 @@ func RecoveryWithWriter(out io.Writer) HandlerFunc {
 				}
 				if logger != nil {
 					stack := stack(3)
+					// 这个函数比较实用，直接将Request Dump出来
 					httpRequest, _ := httputil.DumpRequest(c.Request, false)
 					headers := strings.Split(string(httpRequest), "\r\n")
 					for idx, header := range headers {
 						current := strings.Split(header, ":")
+						// 如果头部包含有鉴权字段，这里把密码设置为*，防止泄漏到日志中
 						if current[0] == "Authorization" {
 							headers[idx] = current[0] + ": *"
 						}
@@ -73,6 +78,7 @@ func RecoveryWithWriter(out io.Writer) HandlerFunc {
 
 				// If the connection is dead, we can't write a status to it.
 				if brokenPipe {
+					// 如果连接不可用了，不能往连接中写数据了
 					c.Error(err.(error)) // nolint: errcheck
 					c.Abort()
 				} else {
@@ -80,11 +86,13 @@ func RecoveryWithWriter(out io.Writer) HandlerFunc {
 				}
 			}
 		}()
+		// 直接调用责任链中的下个函数
 		c.Next()
 	}
 }
 
 // stack returns a nicely formatted stack frame, skipping skip frames.
+// 这个函数也比较实用，用于获取函数栈，方便调试
 func stack(skip int) []byte {
 	buf := new(bytes.Buffer) // the returned data
 	// As we loop, we open files and read them. These variables record the currently
